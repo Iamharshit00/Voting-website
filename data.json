@@ -1,0 +1,30 @@
+{
+  "passwords": {
+    "limited": "Narayana@009",
+    "full": "adminpass5"
+  },
+  "terminals": {
+    "PC-1": { "max": 500, "used": 0 },
+    "PC-2": { "max": 500, "used": 0 }
+  },
+  "admissions": ["123456", "2025001", "1001", "1002"],
+  "admissionsUsed": {},
+  "posts": [
+    { "id": "hb", "title": "Head Boy", "cands": ["Aarav Sharma", "Ishaan Verma"], "isHouse": false, "house": "" },
+    { "id": "hg", "title": "Head Girl", "cands": ["Ananya Gupta", "Diya Mehta"], "isHouse": false, "house": "" },
+    { "id": "dhb", "title": "Deputy Head Boy", "cands": ["Vihaan Patel", "Arjun Rao"], "isHouse": false, "house": "" },
+    { "id": "dhg", "title": "Deputy Head Girl", "cands": ["Myra Iyer", "Aanya Reddy"], "isHouse": false, "house": "" },
+    { "id": "sc_boy", "title": "Sports Captain (Boy)", "cands": ["Kabir Singh", "Rudra Pratap"], "isHouse": false, "house": "" },
+    { "id": "sc_girl", "title": "Sports Captain (Girl)", "cands": ["Tara Desai", "Nisha Kapoor"], "isHouse": false, "house": "" },
+    { "id": "hc_red_boy", "title": "Red House Captain (Boy)", "cands": ["Rohan Bhat", "Aditya Nair"], "isHouse": true, "house": "red" },
+    { "id": "hc_red_girl", "title": "Red House Captain (Girl)", "cands": ["Riya Sen", "Kavya Menon"], "isHouse": true, "house": "red" },
+    { "id": "hc_blue_boy", "title": "Blue House Captain (Boy)", "cands": ["Krishna Das", "Yash Pillai"], "isHouse": true, "house": "blue" },
+    { "id": "hc_blue_girl", "title": "Blue House Captain (Girl)", "cands": ["Pooja Rao", "Sneha Iyer"], "isHouse": true, "house": "blue" },
+    { "id": "hc_green_boy", "title": "Green House Captain (Boy)", "cands": ["Aryan Bose", "Devansh Sen"], "isHouse": true, "house": "green" },
+    { "id": "hc_green_girl", "title": "Green House Captain (Girl)", "cands": ["Meera Das", "Neha Sharma"], "isHouse": true, "house": "green" },
+    { "id": "hc_yellow_boy", "title": "Yellow House Captain (Boy)", "cands": ["Atharv Roy", "Shivansh Lal"], "isHouse": true, "house": "yellow" },
+    { "id": "hc_yellow_girl", "title": "Yellow House Captain (Girl)", "cands": ["Aditi Verma", "Kriti Jain"], "isHouse": true, "house": "yellow" }
+  ],
+  "candidates": {},
+  "votes": {}
+}
