@@ -6,7 +6,7 @@
   "terminals": {
     "PC-1": {
       "max": 500,
-      "used": 0
+      "used": 1
     },
     "PC-2": {
       "max": 500,
@@ -95,7 +95,9 @@
     "6102812",
     "6107664"
   ],
-  "admissionsUsed": {},
+  "admissionsUsed": {
+    "5823525": true
+  },
   "posts": [
     {
       "id": "hb",
@@ -347,7 +349,7 @@
     "hc_blue_girl_Sneha Iyer": 0,
     "hc_green_boy_Aryan Bose": 0,
     "hc_green_boy_Devansh Sen": 1,
-    "hc_green_girl_Meera Das": 0,
+    "hc_green_girl_Meera Das": 1,
     "hc_green_girl_Neha Sharma": 0,
     "hc_yellow_boy_Atharv Roy": 0,
     "hc_yellow_boy_Shivansh Lal": 0,
