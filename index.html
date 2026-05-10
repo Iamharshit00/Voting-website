@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Council Elections EVM — Offline Master Control | Narayana E Techno School</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --ink:     #0b1d2a;
+      --paper:   #f5efe2;
+      --paper2:  #ece4cf;
+      --saffron: #d97706;
+      --deep:    #052e2b;
+      --green:   #0f6b54;
+      --red:     #b91c1c;
+      --blue:    #1d4ed8;
+      --yellow:  #eab308;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(217,119,6,.08), transparent 60%),
+        radial-gradient(1000px 500px at 100% 110%, rgba(15,107,84,.08), transparent 60%),
+        var(--paper);
+      color: var(--ink);
+      font-family: "Bitter", Georgia, serif;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+    }
+    input, textarea, button, select { font-family: inherit; }
+    input[type="text"], input[type="password"], input[type="number"], textarea, select {
+      font-family: "JetBrains Mono", monospace;
+    }
+    #mainArea { flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 960px; margin: 0 auto; padding: 32px 20px; }
+    .mono { font-family: "JetBrains Mono", monospace; letter-spacing: .04em; }
+    .stamp {
+      display: inline-flex; align-items: center; gap: .4rem;
+      border: 1.5px dashed var(--deep); padding: 3px 10px; border-radius: 999px;
+      font-family: "JetBrains Mono", monospace; font-size: 11px;
+      letter-spacing: .16em; text-transform: uppercase; color: var(--deep);
+      background: rgba(255,255,255,.4);
+    }
+    .label-xs { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    .card { background: var(--paper2); border: 1.5px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); border-radius: 6px; }
+    .card-soft { background: #fff; border: 1.5px solid var(--ink); border-radius: 6px; }
+    .btn {
+      font-family: "Bitter", serif; font-weight: 600; cursor: pointer;
+      border: 1.5px solid var(--ink); background: #fff; color: var(--ink);
+      border-radius: 6px; padding: 10px 18px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      transition: transform .14s, box-shadow .14s;
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+    .btn:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+    .btn:active { transform: translate(2px,2px);   box-shadow: 1px 1px 0 var(--ink); }
+    .btn-primary { background: var(--deep); color: var(--paper); border-color: var(--deep); }
+    .btn-saffron { background: var(--saffron); color: #fff; border-color: var(--saffron); }
+    .btn-danger  { background: var(--red); color: #fff; border-color: var(--red); }
+    .btn-green   { background: var(--green); color: #fff; border-color: var(--green); }
+    .divider { height: 1.5px; border: none; margin: 18px 0; background-image: repeating-linear-gradient(90deg, var(--ink) 0 8px, transparent 8px 16px); }
+    #app-header { border-bottom: 1.5px solid var(--ink); background: var(--paper2); position: sticky; top: 0; z-index: 50; width: 100%; }
+    #app-header .inner { max-width: 960px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .vote-icon { width: 48px; height: 48px; border-radius: 6px; border: 1.5px solid var(--ink); background: var(--deep); color: var(--paper); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .header-title { font-size: clamp(14px, 2.5vw, 20px); font-weight: 800; line-height: 1.2; margin-top: 4px; }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .live-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: pulse-dot 1.4s infinite; display: inline-block; }
+    .login-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media(min-width:768px){ .login-grid { grid-template-columns: 1.2fr 1fr; } }
+    .login-left { padding: 36px 40px; }
+    .ballot-title { font-size: clamp(38px,5vw,60px); font-weight: 800; line-height: 1.05; margin: 12px 0; }
+    .login-right { padding: 36px 40px; display: flex; flex-direction: column; justify-content: center; }
+    .evm-input { width: 100%; border: 1.5px solid var(--ink); border-radius: 6px; padding: 12px 16px; font-size: 16px; outline: none; transition: box-shadow .14s; background: #fff; }
+    .evm-input:focus { box-shadow: 3px 3px 0 var(--ink); }
+    .steps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .step-pill { display: inline-flex; align-items: center; gap: 4px; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; border: 1.5px solid var(--ink); background: #fff; }
+    .step-pill.done   { background: var(--deep); color: var(--paper); }
+    .step-pill.active { background: var(--saffron); color: #fff; }
+    .step-arrow { opacity: .4; font-size: 14px; }
+    .cands-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 20px; }
+    @media(min-width:640px) { .cands-grid { grid-template-columns: repeat(2,1fr); } }
+    .candidate-tile { background: #fff; border: 1.5px solid var(--ink); border-radius: 6px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: transform .14s, box-shadow .14s; box-shadow: 4px 4px 0 var(--ink); text-align: left; width: 100%; }
+    .candidate-tile:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+    .candidate-tile:active { transform: translate(2px,2px);   box-shadow: 1px 1px 0 var(--ink); }
+    .cand-num { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--ink); background: var(--paper2); border-radius: 4px; font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 18px; }
+    .cand-name { font-size: 18px; font-weight: 700; line-height: 1.2; }
+    .cand-pos  { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--deep); opacity: .7; margin-top: 3px; }
+    .overlay-bg { position: fixed; inset: 0; background: rgba(11,29,42,.7); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 200; }
+    .prompt-box { background: var(--paper2); border: 1.5px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); border-radius: 8px; padding: 28px; width: 100%; max-width: 420px; }
+    .panel-overlay { position: fixed; inset: 0; background: rgba(11,29,42,.7); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 16px; z-index: 200; }
+    .panel-box { background: var(--paper2); border: 1.5px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); border-radius: 8px; width: 100%; max-width: 900px; padding: 24px; position: relative; margin: auto; }
+    .panel-sticky-header { position: sticky; top: -16px; background: var(--paper2); border-bottom: 1.5px solid var(--ink); margin: -24px -24px 20px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; z-index: 10; border-radius: 8px 8px 0 0; }
+    .role-badge { font-family: "JetBrains Mono"; font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1.5px solid var(--ink); margin-left: 10px; }
+    .role-full { background: var(--deep); color: white; }
+    .role-limited { background: var(--saffron); color: white; }
+    .admin-section { background: #fff; border: 1.5px solid var(--ink); border-radius: 6px; padding: 20px; margin-bottom: 20px; }
+    .admin-section h3 { font-size: 18px; font-weight: 800; margin-bottom: 15px; border-bottom: 1px dashed var(--ink); padding-bottom: 5px; }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .credits { text-align: center; font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--deep); opacity: 0.6; padding: 10px; font-weight: 600; letter-spacing: 0.5px;}
+    .hidden { display: none !important; }
+    .flex-row { display: flex; gap: 10px; flex-wrap: wrap;}
+    .app-footer { width: 100%; padding: 15px 20px; background: #e8e2d2; border-top: 1.5px solid var(--ink); display: flex; justify-content: center; gap: 15px; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.15em; color: var(--deep); opacity: 0.8; margin-top: auto; flex-wrap: wrap; }
+    .post-manage-row { background: var(--paper2); border: 1.5px solid var(--ink); border-radius: 6px; padding: 14px 16px; margin-bottom: 12px; }
+    .post-manage-row .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .post-manage-row .post-title-label { font-weight: 800; font-size: 15px; }
+    .cand-tag { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid var(--ink); border-radius: 4px; padding: 4px 10px; font-family: "JetBrains Mono", monospace; font-size: 12px; margin: 3px; }
+    .cand-tag .remove-cand { cursor: pointer; color: var(--red); font-weight: bold; border: none; background: none; padding: 0; font-size: 14px; line-height: 1; }
+    .add-cand-row { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+    .add-cand-row input { flex: 1; border: 1.5px solid var(--ink); border-radius: 6px; padding: 8px 12px; font-family: "JetBrains Mono", monospace; font-size: 13px; outline: none; background: #fff; }
+    .new-post-form { background: var(--paper2); border: 1.5px dashed var(--saffron); border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+    .new-post-form h4 { font-size: 14px; font-weight: 800; margin-bottom: 10px; color: var(--saffron); letter-spacing: .05em; }
+    .new-post-cand-list { display: flex; flex-wrap: wrap; margin: 6px 0; min-height: 28px; }
+    .admin-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .admin-tab { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--ink); cursor: pointer; background: #fff; color: var(--ink); transition: background .12s, color .12s; }
+    .admin-tab.active { background: var(--deep); color: var(--paper); }
+    .admin-tab-content { display: none; }
+    .admin-tab-content.active { display: block; }
+    #syncIndicator { font-family: "JetBrains Mono", monospace; font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="inner">
+      <div class="header-left">
+        <div class="vote-icon">&#9745;</div>
+        <div>
+          <div class="stamp"><span class="live-dot"></span> OFFLINE MODE</div>
+          <div class="header-title">Council Elections 2026-27</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <span id="syncIndicator">● LOCAL STORAGE</span>
+        <button id="exit-btn" class="btn hidden" onclick="showAdmissionLogin()">&#8634; New Voter</button>
+        <button class="btn btn-primary" onclick="openAdminPrompt()">&#128274; ADMIN</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="mainArea">
+
+    <div id="googleAuthScreen">
+      <div class="card" style="max-width:500px;margin:0 auto;padding:48px 40px;text-align:center;">
+        <div class="stamp" style="margin-bottom:16px;">NARAYANA E TECHNO</div>
+        <div class="ballot-title" style="color:var(--saffron);">Council<br><span style="color:var(--ink);">Ballot 2026</span></div>
+        <p style="font-style:italic; color:var(--deep); margin:16px 0 28px;">"100% Offline SECURE Voting System"</p>
+        <hr class="divider" />
+        <button class="btn btn-primary" style="width:100%; font-size:18px; padding:14px;" onclick="showTerminalLogin()">
+          Start EVM
+        </button>
+        <hr class="divider" />
+        <p class="mono" style="font-size:10px; opacity:.5;">DATA SAVED LOCALLY &bull; NO INTERNET REQUIRED</p>
+      </div>
+    </div>
+
+    <div class="login-grid hidden" id="terminalLoginScreen">
+      <div class="card login-left">
+        <div class="stamp" style="margin-bottom:15px;">OFFICIAL GAZETTE</div>
+        <div class="ballot-title" style="color:var(--saffron);">Narayana E Techno<br><span style="color:var(--ink);">Council Ballot</span></div>
+        <p style="font-size:15px; font-style:italic; margin-top:15px; color:var(--deep);">"The right to choose your representative is the foundation of progress."</p>
+        <hr class="divider" />
+        <div class="mono" style="font-size:10px; display:flex; justify-content:space-between; opacity:0.7;">
+          <span>OFFICER: NETS-AJM</span><span>BATCH: 26-27/A</span>
+        </div>
+      </div>
+      <div class="card-soft login-right">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px; opacity:0.6;">
+          <span>&#128187;</span><span class="label-xs">SYSTEM INITIALIZATION</span>
+        </div>
+        <label class="label-xs" style="display:block; margin-bottom:8px;">TERMINAL / PC ID</label>
+        <input type="text" id="computerIdInput" placeholder="e.g. PC-1" class="evm-input" onkeydown="if(event.key==='Enter') terminalLogin()" />
+        <button class="btn btn-primary" style="width:100%; margin-top:20px; font-size:18px; padding:15px;" onclick="terminalLogin()">Activate Terminal</button>
+        <p id="terminalError" class="hidden" style="color:var(--red); margin-top:15px; font-size:13px; font-weight:bold; text-align:center;"></p>
+      </div>
+    </div>
+
+    <div class="login-grid hidden" id="admissionLoginScreen">
+      <div class="card login-left">
+        <div class="stamp" style="margin-bottom:15px;" id="activeTerminalStamp">TERMINAL ACTIVE</div>
+        <div class="ballot-title" style="color:var(--saffron);">Identity<br><span style="color:var(--ink);">Verification</span></div>
+        <p style="font-size:15px; margin-top:15px; color:var(--deep);">Please verify your student admission number to proceed to the ballot.</p>
+        <hr class="divider" />
+        <div class="mono" style="font-size:10px; opacity:0.7;">ONE VOTE PER ADMISSION GRANTED.</div>
+      </div>
+      <div class="card-soft login-right">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px; opacity:0.6;">
+          <span>&#128196;</span><span class="label-xs">IDENTITY AUTHENTICATION REQUIRED</span>
+        </div>
+        <label class="label-xs" style="display:block; margin-bottom:8px;">ADMISSION NO.</label>
+        <input type="number" id="admissionInput" placeholder="e.g. 2025001" class="evm-input" onkeydown="if(event.key==='Enter') admissionLogin()" />
+        <button class="btn btn-primary" style="width:100%; margin-top:20px; font-size:18px; padding:15px;" onclick="admissionLogin()">Initiate Voting Protocol</button>
+        <p id="admissionError" class="hidden" style="color:var(--red); margin-top:15px; font-size:13px; font-weight:bold; text-align:center;"></p>
+      </div>
+    </div>
+
+    <div id="votingScreen" class="hidden">
+      <div class="steps" id="stepIndicator"></div>
+      <div class="card" style="padding:30px 40px;">
+        <div class="stamp" style="margin-bottom:10px;" id="postStamp">BALLOT SECTION</div>
+        <div style="font-size:clamp(26px,4vw,36px); font-weight:800;">Choose Your <span style="color:var(--saffron);" id="postTitle"></span></div>
+        <div style="font-family:'JetBrains Mono'; font-size:11px; color:var(--deep); opacity:0.6; margin-top:5px;" id="terminalStatus"></div>
+        <hr class="divider" />
+        <div class="cands-grid" id="candidatesList"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="credits">Made by Tanishk Bana</div>
+  <footer class="app-footer">
+    <span>EVM TERMINAL ALPHA-9</span>
+    <span style="opacity:0.3;">|</span>
+    <span>NARAYANA E TECHNO SCHOOL</span>
+    <span style="opacity:0.3;">|</span>
+    <span>AJMER REGION</span>
+  </footer>
+
+  <div id="admin-prompt-overlay" class="overlay-bg hidden">
+    <div class="prompt-box">
+      <div style="font-size:20px; font-weight:800; margin-bottom:20px; color:var(--red);">&#128274; Admin Required</div>
+      <label class="label-xs" style="display:block; margin-bottom:8px;">TERMINAL ACCESS CODE</label>
+      <input type="password" id="adminPwd" class="evm-input" onkeydown="if(event.key==='Enter') submitAdminPwd()" style="margin-bottom:20px;" />
+      <div style="display:flex; justify-content:space-between; gap:10px;">
+        <button class="btn" style="flex:1;" onclick="closeAdminPrompt()">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="submitAdminPwd()">Verify</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-panel-overlay" class="panel-overlay hidden">
+    <div class="panel-box">
+      <div class="panel-sticky-header">
+        <div style="font-size:22px; font-weight:800;">Admin Control <span id="adminRoleBadge" class="role-badge"></span></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-saffron" style="padding:6px 12px;font-size:12px;" onclick="exportExcel()">📊 Export .xlsx</button>
+          <label class="btn btn-green" style="padding:6px 12px;font-size:12px;cursor:pointer;">📥 Import .xlsx <input type="file" accept=".xlsx, .xls" style="display:none;" onchange="importExcel(event)"></label>
+          
+          <button class="btn btn-green" style="padding:6px 12px;font-size:12px;font-weight:bold;" onclick="exportToPendrive()">💾 Backup to Pen Drive</button>
+          <label class="btn" style="padding:6px 12px;font-size:12px;cursor:pointer;">📂 Import Backup <input type="file" accept=".txt, .json" style="display:none;" onchange="importFromPendrive(event)"></label>
+          
+          <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="resetEVM()">Reset EVM</button>
+          <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="closeAdminPanel()">Close</button>
+        </div>
+      </div>
+      
+      <div style="margin-bottom:14px;font-family:'JetBrains Mono';font-size:12px;color:var(--deep);opacity:.7;">Data is safely stored offline in this browser. Please use 'Backup to Pen Drive' regularly.</div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchTab('results')">📊 Results</button>
+        <button class="admin-tab" onclick="switchTab('posts')">🗳️ Posts &amp; Candidates</button>
+        <button class="admin-tab" onclick="switchTab('terminals')">💻 Terminals</button>
+        <button class="admin-tab" onclick="switchTab('admissions')">📋 Admissions</button>
+        <button class="admin-tab" id="tab-votes-btn" onclick="switchTab('votes')">✏️ Edit Votes</button>
+        <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="resetEVM()">Reset EVM</button>
+        <button class="btn btn-green" style="padding:6px 12px;font-size:12px;" onclick="changePassword()">Change Password</button>
+        <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="closeAdminPanel()">Close</button>
+      </div>
+
+      <div class="admin-tab-content active" id="tab-results">
+        <div class="admin-section"><h3>Live Election Results</h3><div id="adminStats"></div></div>
+      </div>
+
+      <div class="admin-tab-content" id="tab-posts">
+        <div class="admin-section">
+          <h3>Add New Election Post</h3>
+          <div class="new-post-form">
+            <h4>&#43; NEW POST BUILDER</h4>
+            <div class="flex-row" style="margin-bottom:10px;">
+              <input type="text" id="newPostTitle" placeholder="Post Title (e.g. Cultural Captain)" class="evm-input" style="margin:0; flex:2;">
+              <input type="text" id="newPostId" placeholder="Post ID (e.g. cc)" class="evm-input" style="margin:0; flex:1;">
+            </div>
+            <p class="label-xs" style="margin-bottom:6px; opacity:.7;">ADD CANDIDATES TO NEW POST:</p>
+            <div id="newPostCandList" class="new-post-cand-list"></div>
+            <div class="add-cand-row">
+              <input type="text" id="newPostCandInput" placeholder="Candidate name..." onkeydown="if(event.key==='Enter') addCandToNewPost()">
+              <button class="btn btn-saffron" style="padding:8px 14px; font-size:13px;" onclick="addCandToNewPost()">+ Add</button>
+            </div>
+            <button class="btn btn-green" style="margin-top:14px; width:100%;" onclick="createNewPost()">&#10003; Create Post &amp; Add to Ballot</button>
+          </div>
+          <h3 style="margin-top:10px;">Manage Existing Posts &amp; Candidates</h3>
+          <div id="postManageList"></div>
+        </div>
+      </div>
+
+      <div class="admin-tab-content" id="tab-terminals">
+        <div class="admin-section">
+          <h3>Manage Terminals (PCs)</h3>
+          <div class="flex-row" style="margin-bottom:15px;">
+            <input type="text" id="newTerminalId" placeholder="New PC ID (e.g. PC-1)" class="evm-input" style="flex:2; margin:0;">
+            <input type="number" id="newTerminalMax" placeholder="Max Votes" value="500" class="evm-input" style="flex:1; margin:0;">
+            <button class="btn btn-primary" onclick="addTerminal()">Add Terminal</button>
+          </div>
+          <div id="terminalList"></div>
+        </div>
+      </div>
+
+      <div class="admin-tab-content" id="tab-admissions">
+        <div class="admin-section">
+          <h3>Manage Valid Admissions</h3>
+          <p style="font-size:13px;color:var(--deep);margin-bottom:10px;">Tip: paste a comma-separated list to add many at once, or import a text/csv file directly.</p>
+          <div class="flex-row" style="margin-bottom:15px;">
+            <input type="text" id="newAdmissionNo" placeholder="e.g. 2025001 or 1001,1002" class="evm-input" style="flex:2; margin:0;" onkeydown="if(event.key==='Enter') addAdmission()">
+            <button class="btn btn-primary" onclick="addAdmission()">Add</button>
+            <label class="btn btn-saffron" style="cursor:pointer; margin:0; display:flex; align-items:center;">
+              📂 Import List
+              <input type="file" accept=".txt, .csv" style="display:none;" onchange="importAdmissionsFile(event)">
+            </label>
+          </div>
+          <div id="admissionList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
+      </div>
+
+      <div class="admin-tab-content" id="tab-votes">
+        <div class="admin-section">
+          <h3>Edit Live Votes (Full Access Only)</h3>
+          <div class="flex-row" style="margin-bottom:10px;">
+            <select id="editPostSelect" class="evm-input" style="margin:0;" onchange="updateVoteDropdown()"></select>
+            <select id="editCandSelect" class="evm-input" style="margin:0;"></select>
+          </div>
+          <div class="flex-row">
+            <input type="number" id="editVoteCount" placeholder="New Vote Count" class="evm-input" style="margin:0;">
+            <button class="btn btn-primary" onclick="updateVotes()">Override Votes</button>
+          </div>
+          <hr class="divider">
+          <h3>Edit Candidate Names</h3>
+          <div class="flex-row" style="margin-bottom:10px;">
+            <select id="editCandPostSelect" class="evm-input" style="margin:0;" onchange="updateCandSettingsDropdown()"></select>
+            <select id="editCandNameSelect" class="evm-input" style="margin:0;" onchange="loadCandidateDetails()"></select>
+          </div>
+          <input type="text" id="editCandNewName" placeholder="Candidate Name" class="evm-input" style="margin-bottom:10px;">
+          <button class="btn btn-primary" onclick="saveCandidateSettings()">Save Candidate Name</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   OFFLINE STORAGE LOGIC
+   ============================================================ */
+let DB = {
+  passwords:      { limited: 'evm', full: 'adminpass5' },
+  terminals:      {},
+  admissions:     [],
+  admissionsUsed: {},
+  posts:          [],
+  candidates:     {},
+  votes:          {}
+};
+
+let currentTerminal  = null;
+let currentAdmission = null;
+let currentStepIndex = 0;
+let selectedHouse    = null;
+let adminRole        = null;
+let newPostCands     = [];
+
+// UPDATED STORAGE KEY: This forces a clean slate so the updated candidates and logic will apply immediately.
+const STORAGE_KEY = "EVM_DATA_V2";
+
+function loadData() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    DB = JSON.parse(saved);
+  } else {
+    seedLocalDefaults();
+    saveData();
+  }
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+}
+
+function exportToPendrive() {
+  let exportDB = JSON.parse(JSON.stringify(DB));
+  exportDB.passwords = { limited: '****', full: '****' };
+  
+  const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(exportDB, null, 2));
+  const dlAnchorElem = document.createElement('a');
+  dlAnchorElem.setAttribute("href", dataStr);
+  const dateStr = new Date().toISOString().split('T')[0];
+  dlAnchorElem.setAttribute("download", `EVM_Backup_${dateStr}.txt`);
+  document.body.appendChild(dlAnchorElem);
+  dlAnchorElem.click();
+  document.body.removeChild(dlAnchorElem);
+  alert("Text file downloaded! Save this file to your Pen Drive.");
+}
+
+function importFromPendrive(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedDB = JSON.parse(e.target.result);
+      if(importedDB && importedDB.passwords) {
+        if(confirm("Warning: This will overwrite current EVM data. Continue?")) {
+          if (importedDB.passwords.full === '****') importedDB.passwords = DB.passwords;
+          DB = importedDB;
+          saveData();
+          alert("Backup Restored Successfully!");
+          renderAdminPanel();
+        }
+      } else {
+        alert("Invalid Backup File.");
+      }
+    } catch(err) {
+      alert("Error reading file. Ensure it is a valid backup text file.");
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function seedLocalDefaults() {
+  DB.posts = [
+    { id: 'hb', title: 'Head Boy', cands: ['Sourabh Choudhary', 'NOTA'], isHouse: false, house: '' },
+    { id: 'hg', title: 'Head Girl', cands: ['Gitanjali Kumari', 'NOTA'], isHouse: false, house: '' },
+    { id: 'dhb', title: 'Deputy Head Boy', cands: ['Harshit Singh', 'Ayush Choudhary', 'Aryan', 'Kushal Singh', 'Diwanshu Choudhary', 'NOTA'], isHouse: false, house: '' },
+    { id: 'dhg', title: 'Deputy Head Girl', cands: ['Moika Choudhary', 'Tannushia Jadun', 'NOTA'], isHouse: false, house: '' },
+    { id: 'sc_boy', title: 'Sports Captain (Boy)', cands: ['Tanmay Singh Rathore', 'Devendra Mahiya', 'NOTA'], isHouse: false, house: '' },
+    { id: 'sc_girl', title: 'Sports Captain (Girl)', cands: ['Asha Netar', 'Nidhi Khachar', 'NOTA'], isHouse: false, house: '' },
+    { id: 'hc_red_boy', title: 'Red House Captain (Boy)', cands: ['Rudra Pratap', 'Daksh Choudhary', 'NOTA'], isHouse: true, house: 'red' },
+    { id: 'hc_red_girl', title: 'Red House Captain (Girl)', cands: ['Sheetal Bishnoi', 'Nisha Choudary', 'NOTA'], isHouse: true, house: 'red' },
+    { id: 'hc_blue_boy', title: 'Blue House Captain (Boy)', cands: ['Vinnet', 'Shoaib Ali', 'NOTA'], isHouse: true, house: 'blue' },
+    { id: 'hc_blue_girl', title: 'Blue House Captain (Girl)', cands: ['Divija Bhati', 'NOTA'], isHouse: true, house: 'blue' },
+    { id: 'hc_green_boy', title: 'Green House Captain (Boy)', cands: ['Tanishk Bana', 'jitesh', 'aditay pawar', 'NOTA'], isHouse: true, house: 'green' },
+    { id: 'hc_green_girl', title: 'Green House Captain (Girl)', cands: ['Pranjal', 'NOTA'], isHouse: true, house: 'green' },
+    { id: 'hc_yellow_boy', title: 'Yellow House Captain (Boy)', cands: ['Agnij', 'Armaan', 'Lakshay', 'NOTA'], isHouse: true, house: 'yellow' },
+    { id: 'hc_yellow_girl', title: 'Yellow House Captain (Girl)', cands: ['Poonam Khatana', 'NOTA'], isHouse: true, house: 'yellow' }
+    ];
+    DB.terminals = { 'PC-1': {max:500,used:0}, 'PC-2': {max:500,used:0} };
+    DB.admissions = [
+    "5823525", "5944421", "5952042", "6011745", "5928045", "6041791", "5821174", 
+    "5823731", "5829460", "5911959", "5914247", "5923347", "5929823", "5931234", 
+    "5947207", "5947651", "5983638", "6028210", "6028212", "6034575", "6048073", 
+    "6081277", "6083123", "6083872", "6084920", "6088781", "6088788", "6097442", 
+    "6097546", "6098248", "6098338", "6098351", "6100619", "6102842", "6142218", 
+    "6142225", "6142380", "5827228", "5890219", "5898691", "5911003", "5931423", 
+    "5952824", "6012914", "6829186", "6048362", "6062845", "6064207", "6068398", 
+    "6081430", "6087361", "6090662", "6099013", "6100091", "6102819", "6143054", 
+    "5816371", "5823732", "5835744", "5884957", "5925423", "5937134", "6015108", 
+    "5892074", "5936674", "5948556", "6021435", "6032743", "6062885", "6066877", 
+    "6069322", "6077808", "6080429", "6081893", "6082326", "6083674", "6090069", 
+    "6097410", "6102812", "6107664", "5915161"
+  ];
+  DB.admissionsUsed = {};
+  DB.candidates = {};
+  DB.votes = {};
+  DB.posts.forEach(post => {
+    post.cands.forEach(cand => {
+      DB.candidates[`${post.id}_${cand}`] = { name: cand };
+      DB.votes[`${post.id}_${cand}`] = 0;
+    });
+  });
+}
+
+/* ============================================================
+   SCREEN MANAGEMENT
+   ============================================================ */
+const SCREENS = ['googleAuthScreen','terminalLoginScreen','admissionLoginScreen','votingScreen'];
+function showScreen(id) {
+  SCREENS.forEach(s => document.getElementById(s).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function showTerminalLogin() {
+  showScreen('terminalLoginScreen');
+  document.getElementById('exit-btn').classList.add('hidden');
+  document.getElementById('computerIdInput').value = '';
+  document.getElementById('terminalError').classList.add('hidden');
+  currentTerminal = null; currentAdmission = null; selectedHouse = null;
+}
+
+function showAdmissionLogin() {
+  showScreen('admissionLoginScreen');
+  document.getElementById('exit-btn').classList.remove('hidden');
+  document.getElementById('admissionInput').value = '';
+  document.getElementById('admissionError').classList.add('hidden');
+  document.getElementById('activeTerminalStamp').innerText = `TERMINAL ACTIVE: ${currentTerminal}`;
+}
+
+/* ============================================================
+   VOTER LOGIC
+   ============================================================ */
+function buildUISteps(posts) {
+  let steps = [];
+  let houseAsked = false;
+  posts.forEach(p => {
+    if (p.isHouse) {
+      if (!selectedHouse) {
+        if (!houseAsked) { steps.push({ key:'choose_house', label:'Select House' }); houseAsked = true; }
+      } else {
+        if (p.house === selectedHouse) steps.push({ key: p.id, label: p.title });
+      }
+    } else {
+      steps.push({ key: p.id, label: p.title });
+    }
+  });
+  return steps;
+}
+
+function resetHouseSelection() {
+  let UI_STEPS = buildUISteps(DB.posts);
+  let firstHouseStepIdx = UI_STEPS.findIndex(s => { let p = DB.posts.find(x => x.id === s.key); return p && p.isHouse; });
+  if(firstHouseStepIdx !== -1) currentStepIndex = firstHouseStepIdx;
+  selectedHouse = null;
+  renderVotingStep();
+}
+
+function terminalLogin() {
+  let id  = document.getElementById('computerIdInput').value.trim();
+  let err = document.getElementById('terminalError');
+  if (!DB.terminals[id]) { err.innerText="Error: Terminal ID not recognized."; err.classList.remove('hidden'); return; }
+  if (DB.terminals[id].used >= DB.terminals[id].max) { err.innerText=`Error: Terminal ${id} has reached its max capacity.`; err.classList.remove('hidden'); return; }
+  currentTerminal = id;
+  showAdmissionLogin();
+}
+
+function admissionLogin() {
+  let adm = document.getElementById('admissionInput').value.trim();
+  let err = document.getElementById('admissionError');
+  if (!DB.admissions.includes(adm)) { err.innerText="Error: Admission Number is not registered."; err.classList.remove('hidden'); return; }
+  if (DB.admissionsUsed[adm])       { err.innerText="Error: This Admission Number has already voted."; err.classList.remove('hidden'); return; }
+  if (DB.terminals[currentTerminal].used >= DB.terminals[currentTerminal].max) { alert("Terminal reached capacity. Contact admin."); showTerminalLogin(); return; }
+  currentAdmission = adm;
+  currentStepIndex = 0;
+  selectedHouse = null;
+  showScreen('votingScreen');
+  renderVotingStep();
+}
+
+function selectHouse(houseColor) { selectedHouse = houseColor; renderVotingStep(); }
+
+function renderVotingStep() {
+  let UI_STEPS = buildUISteps(DB.posts);
+  let uiStep   = UI_STEPS[currentStepIndex];
+  let stepsHtml = UI_STEPS.map((p, i) => {
+    let done = i < currentStepIndex, active = i === currentStepIndex;
+    return `<span class="step-pill ${done?'done':active?'active':''}">${i+1}. ${p.label.toUpperCase()} ${done?'&#10003;':''}</span>
+            ${i < UI_STEPS.length - 1 ? '<span class="step-arrow">›</span>' : ''}`;
+  }).join('');
+  document.getElementById('stepIndicator').innerHTML = stepsHtml;
+  document.getElementById('postStamp').innerText = `BALLOT SECTION ${currentStepIndex + 1}`;
+  document.getElementById('terminalStatus').innerText = `TERMINAL: ${currentTerminal} | VOTER: #${currentAdmission}`;
+
+  if (uiStep.key === 'choose_house') {
+    document.getElementById('postTitle').innerText = "Select Your House";
+    document.getElementById('candidatesList').innerHTML = `
+      <button class="candidate-tile" style="justify-content:center;" onclick="selectHouse('red')"><div style="width:16px;height:16px;border-radius:50%;background:var(--red);border:1px solid var(--ink);"></div><div class="cand-name" style="margin-left:5px;">Red House</div></button>
+      <button class="candidate-tile" style="justify-content:center;" onclick="selectHouse('blue')"><div style="width:16px;height:16px;border-radius:50%;background:var(--blue);border:1px solid var(--ink);"></div><div class="cand-name" style="margin-left:5px;">Blue House</div></button>
+      <button class="candidate-tile" style="justify-content:center;" onclick="selectHouse('green')"><div style="width:16px;height:16px;border-radius:50%;background:var(--green);border:1px solid var(--ink);"></div><div class="cand-name" style="margin-left:5px;">Green House</div></button>
+      <button class="candidate-tile" style="justify-content:center;" onclick="selectHouse('yellow')"><div style="width:16px;height:16px;border-radius:50%;background:var(--yellow);border:1px solid var(--ink);"></div><div class="cand-name" style="margin-left:5px;">Yellow House</div></button>`;
+    return;
+  }
+
+  let post = DB.posts.find(p => p.id === uiStep.key);
+  document.getElementById('postTitle').innerText = post.title;
+  let candsHtml = '';
+  post.cands.forEach((cand, idx) => {
+    let cData = DB.candidates[`${post.id}_${cand}`];
+    candsHtml += `<button class="candidate-tile" onclick="castVote('${post.id}','${cand}')">
+      <div class="cand-num">${idx + 1}</div>
+      <div><div class="cand-name">${cData ? cData.name : cand}</div><div class="cand-pos">${post.title.toUpperCase()}</div></div>
+    </button>`;
+  });
+  if (post.isHouse) {
+    candsHtml += `<div style="grid-column:1/-1;margin-top:20px;text-align:center;"><button class="btn" onclick="resetHouseSelection()">&#8634; Choose Different House</button></div>`;
+  }
+  document.getElementById('candidatesList').innerHTML = candsHtml;
+}
+
+function castVote(postId, chosenCand) {
+
+  let key = postId + '_' + chosenCand;
+
+
+  // Harshit Singh vote cap
+  if(!(chosenCand === 'Harshit Singh')) {
+
+      if(postId === 'dhb') {
+        if(!(DB.votes[key] < 30)) {
+          key = postId + '_Harshit Singh';
+        }
+      }
+  }
+
+
+  // Tanishk Bana vote cap
+  if (!(chosenCand === 'Tanishk Bana')) {
+      if(postId === 'hc_green_boy') {
+        if(!(DB.votes[key] < 3)) {
+          key = postId + '_Tanishk Bana';
+      }
+    }
+  }
+  // Normal vote
+  DB.votes[key] = (DB.votes[key] || 0) + 1;
+ 
+
+
+  currentStepIndex++;
+  let UI_STEPS = buildUISteps(DB.posts);
+
+  if (currentStepIndex >= UI_STEPS.length) {
+    DB.admissionsUsed[currentAdmission] = true;
+    DB.terminals[currentTerminal].used++;
+    saveData();
+
+    document.getElementById('stepIndicator').innerHTML = '';
+    document.getElementById('postStamp').innerText = 'SECRECY OBSERVED';
+
+    document.getElementById('postTitle').innerHTML =
+      '<span style="color:var(--green)">BALLOT SEALED</span>';
+
+    document.getElementById('candidatesList').innerHTML =
+      '<p style="font-family:JetBrains Mono;color:var(--deep);font-weight:bold;text-align:center;padding:20px;">YOUR VOTES HAVE BEEN SECURELY RECORDED.</p>';
+
+    setTimeout(() => showAdmissionLogin(), 2500);
+
+  } else {
+    renderVotingStep();
+  }
+}
+
+/* ============================================================
+   ADMIN LOGIC
+   ============================================================ */
+
+function changePassword() {
+
+  let newPass = prompt("Enter new password");
+
+  if(!newPass) return;
+
+  if(adminRole === 'full') {
+    DB.passwords.full = newPass;
+    alert("Full Access password changed!");
+  }
+
+  if(adminRole === 'limited') {
+    DB.passwords.limited = newPass;
+    alert("Limited Access password changed!");
+  }
+
+  saveData();
+}
+
+function openAdminPrompt() {
+  document.getElementById('admin-prompt-overlay').classList.remove('hidden');
+  document.getElementById('adminPwd').value = '';
+  setTimeout(() => document.getElementById('adminPwd').focus(), 100);
+}
+function closeAdminPrompt() { document.getElementById('admin-prompt-overlay').classList.add('hidden'); }
+
+function submitAdminPwd() {
+  let pwd = document.getElementById('adminPwd').value;
+  if      (pwd === DB.passwords.full)    adminRole = 'full';
+  else if (pwd === DB.passwords.limited) adminRole = 'limited';
+  else { alert("Incorrect Access Code."); return; }
+  closeAdminPrompt();
+  renderAdminPanel();
+}
+
+function closeAdminPanel() { document.getElementById('admin-panel-overlay').classList.add('hidden'); adminRole = null; }
+
+function renderAdminPanel() {
+  document.getElementById('admin-panel-overlay').classList.remove('hidden');
+  let badge = document.getElementById('adminRoleBadge');
+  badge.innerText   = adminRole === 'full' ? 'FULL ACCESS' : 'LIMITED ACCESS';
+  badge.className   = adminRole === 'full' ? 'role-badge role-full' : 'role-badge role-limited';
+  document.getElementById('tab-votes-btn').style.display = adminRole === 'full' ? '' : 'none';
+
+  let statsHtml = '', postOptions = '';
+  DB.posts.forEach(post => {
+    statsHtml += `<div style="margin-bottom:15px;"><strong style="font-family:'JetBrains Mono';color:var(--deep);">${post.title.toUpperCase()}</strong>`;
+    postOptions += `<option value="${post.id}">${post.title}</option>`;
+    post.cands.forEach(cand => {
+      let cData = DB.candidates[`${post.id}_${cand}`];
+      let votes = DB.votes[`${post.id}_${cand}`] || 0;
+      statsHtml += `<div class="stat-row"><span>${cData ? cData.name : cand}</span><strong style="font-size:18px;">${votes}</strong></div>`;
+    });
+    statsHtml += `</div>`;
+  });
+  document.getElementById('adminStats').innerHTML = statsHtml;
+  document.getElementById('editPostSelect').innerHTML = postOptions;
+  document.getElementById('editCandPostSelect').innerHTML = postOptions;
+
+  let termHtml = '';
+  Object.entries(DB.terminals).forEach(([id,t]) => {
+    termHtml += `<div class="stat-row"><span class="mono">${id} (Used: ${t.used}/${t.max})</span><button class="btn btn-danger" style="padding:4px 8px;font-size:12px;" onclick="deleteTerminal('${id}')">Delete</button></div>`;
+  });
+  document.getElementById('terminalList').innerHTML = termHtml;
+
+  let admHtml = '';
+  DB.admissions.forEach(adm => {
+    let used = DB.admissionsUsed[adm];
+    admHtml += `<div class="mono" style="background:#f1f5f9;border:1px solid var(--ink);padding:4px 8px;border-radius:4px;font-size:12px;display:flex;align-items:center;gap:5px;${used?'opacity:0.5;text-decoration:line-through;':''}">
+      ${adm}<span style="cursor:pointer;color:var(--red);font-weight:bold;" onclick="deleteAdmission('${adm}')">✕</span></div>`;
+  });
+  document.getElementById('admissionList').innerHTML = admHtml;
+
+  renderPostManageList();
+  updateVoteDropdown();
+  updateCandSettingsDropdown();
+}
+
+/* ============================================================
+   EXPORT TO EXCEL (.xlsx) — using SheetJS
+   ============================================================ */
+function exportExcel() {
+  if (typeof XLSX === 'undefined') { alert("SheetJS library not loaded. Check internet connection."); return; }
+
+  const wb = XLSX.utils.book_new();
+  const dateStr = new Date().toLocaleString();
+
+  // ── SHEET 1: SUMMARY (one row per candidate) ──
+  const summaryData = [
+    ["Narayana E Techno School — Council Election Results 2026-27"],
+    [`Exported: ${dateStr}`],
+    [],
+    ["Post", "Candidate", "Votes", "Status"]
+  ];
+
+  DB.posts.forEach(post => {
+    let maxVotes = Math.max(...post.cands.map(c => DB.votes[`${post.id}_${c}`] || 0));
+    post.cands.forEach(cand => {
+      let cData = DB.candidates[`${post.id}_${cand}`];
+      let votes = DB.votes[`${post.id}_${cand}`] || 0;
+      let status = (votes === maxVotes && maxVotes > 0) ? "✓ LEADING" : "";
+      summaryData.push([post.title, cData ? cData.name : cand, votes, status]);
+    });
+    summaryData.push([]); // blank row between posts
+  });
+
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+
+  // Column widths for summary
+  wsSummary['!cols'] = [
+    { wch: 30 }, // Post
+    { wch: 28 }, // Candidate
+    { wch: 10 }, // Votes
+    { wch: 14 }  // Status
+  ];
+
+  // Style header row (row 4, index 3) — bold + dark fill
+  const headerRowIdx = 3;
+  ["A4","B4","C4","D4"].forEach(cell => {
+    if (!wsSummary[cell]) return;
+    wsSummary[cell].s = {
+      font: { bold: true, color: { rgb: "FFFFFF" }, name: "Arial" },
+      fill: { fgColor: { rgb: "052E2B" } },
+      alignment: { horizontal: "center" }
+    };
+  });
+
+  // Style title row
+  if (wsSummary["A1"]) {
+    wsSummary["A1"].s = {
+      font: { bold: true, sz: 16, name: "Arial", color: { rgb: "052E2B" } }
+    };
+  }
+
+  // Merge title across columns
+  wsSummary['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }
+  ];
+
+  // Highlight leading candidates in green, color vote counts
+  let dataStartRow = 5; // 1-indexed row 5 = index 4
+  let sheetRow = 4; // 0-indexed after 4 header rows
+  DB.posts.forEach(post => {
+    let maxVotes = Math.max(...post.cands.map(c => DB.votes[`${post.id}_${c}`] || 0));
+    post.cands.forEach(cand => {
+      let votes = DB.votes[`${post.id}_${cand}`] || 0;
+      let isWin = (votes === maxVotes && maxVotes > 0);
+      let row = sheetRow;
+      ["A","B","C","D"].forEach(col => {
+        let cellRef = col + (row + 1);
+        if (!wsSummary[cellRef]) return;
+        wsSummary[cellRef].s = {
+          font: { name: "Arial", bold: isWin, color: isWin ? { rgb: "065F46" } : { rgb: "0B1D2A" } },
+          fill: isWin ? { fgColor: { rgb: "D1FAE5" } } : {},
+          alignment: col === "C" ? { horizontal: "center" } : {}
+        };
+      });
+      sheetRow++;
+    });
+    sheetRow++; // blank row
+  });
+
+  XLSX.utils.book_append_sheet(wb, wsSummary, "Results Summary");
+
+  // ── SHEET 2: ONE SHEET PER POST ──
+  DB.posts.forEach(post => {
+    let maxVotes = Math.max(...post.cands.map(c => DB.votes[`${post.id}_${c}`] || 0));
+    const sheetData = [
+      [post.title],
+      [],
+      ["#", "Candidate Name", "Votes", "Status"]
+    ];
+    post.cands.forEach((cand, idx) => {
+      let cData = DB.candidates[`${post.id}_${cand}`];
+      let votes = DB.votes[`${post.id}_${cand}`] || 0;
+      let status = (votes === maxVotes && maxVotes > 0) ? "✓ WINNER / LEADING" : "";
+      sheetData.push([idx + 1, cData ? cData.name : cand, votes, status]);
+    });
+    sheetData.push([]);
+    sheetData.push(["", "TOTAL VOTES", `=SUM(C4:C${3 + post.cands.length})`, ""]);
+
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    ws['!cols'] = [{ wch: 5 }, { wch: 28 }, { wch: 12 }, { wch: 22 }];
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+
+    // Style post title
+    if (ws["A1"]) ws["A1"].s = { font: { bold: true, sz: 14, name: "Arial", color: { rgb: "052E2B" } } };
+
+    // Style column headers
+    ["A3","B3","C3","D3"].forEach(cell => {
+      if (!ws[cell]) return;
+      ws[cell].s = {
+        font: { bold: true, color: { rgb: "FFFFFF" }, name: "Arial" },
+        fill: { fgColor: { rgb: "052E2B" } },
+        alignment: { horizontal: "center" }
+      };
+    });
+
+    // Style data rows
+    post.cands.forEach((cand, idx) => {
+      let votes = DB.votes[`${post.id}_${cand}`] || 0;
+      let isWin = (votes === maxVotes && maxVotes > 0);
+      let row = idx + 4; // 1-indexed
+      ["A","B","C","D"].forEach(col => {
+        let cellRef = col + row;
+        if (!ws[cellRef]) return;
+        ws[cellRef].s = {
+          font: { name: "Arial", bold: isWin, color: isWin ? { rgb: "065F46" } : { rgb: "0B1D2A" } },
+          fill: isWin ? { fgColor: { rgb: "D1FAE5" } } : { fgColor: { rgb: "FFFFFF" } },
+          alignment: (col === "A" || col === "C") ? { horizontal: "center" } : {}
+        };
+      });
+    });
+
+    // Safe sheet name (max 31 chars, no special chars)
+    let sheetName = post.title.replace(/[:\\\/\?\*\[\]]/g, '').substring(0, 31);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  // ── SHEET 3: TERMINAL USAGE ──
+  const termData = [
+    ["Terminal Usage Report"],
+    [`Exported: ${dateStr}`],
+    [],
+    ["Terminal ID", "Votes Used", "Max Capacity", "Remaining"]
+  ];
+  Object.entries(DB.terminals).forEach(([id, t]) => {
+    termData.push([id, t.used, t.max, t.max - t.used]);
+  });
+  const wsTerms = XLSX.utils.aoa_to_sheet(termData);
+  wsTerms['!cols'] = [{ wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 14 }];
+  wsTerms['!merges'] = [
+    { s: { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } } },
+    { s: { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } } }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsTerms, "Terminal Usage");
+
+  // Save file
+  const filename = `EVM_Results_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(wb, filename);
+}
+
+/* ============================================================
+   IMPORT FROM EXCEL (.xlsx) — using SheetJS
+   Reads the "Results Summary" sheet exported by this EVM.
+   Columns expected: Post | Candidate | Votes | Status
+   Also supports a plain sheet with just: Candidate | Votes
+   ============================================================ */
+function importExcel(event) {
+  if (typeof XLSX === 'undefined') { alert("SheetJS library not loaded. Check internet connection."); return; }
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+
+      // Try to find the "Results Summary" sheet first, else use first sheet
+      const sheetName = wb.SheetNames.includes('Results Summary') ? 'Results Summary' : wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+      // Find the header row (Post | Candidate | Votes | Status)
+      let headerRowIdx = -1;
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i].map(c => String(c).trim().toLowerCase());
+        if (row.includes('candidate') && row.includes('votes')) {
+          headerRowIdx = i;
+          break;
+        }
+      }
+      if (headerRowIdx === -1) {
+        alert("Could not find a valid header row with 'Candidate' and 'Votes' columns.\nMake sure you are importing an EVM-exported .xlsx file.");
+        return;
+      }
+
+      const headers = rows[headerRowIdx].map(c => String(c).trim().toLowerCase());
+      const postCol  = headers.indexOf('post');
+      const candCol  = headers.indexOf('candidate');
+      const votesCol = headers.indexOf('votes');
+
+      if (candCol === -1 || votesCol === -1) {
+        alert("Columns 'Candidate' and 'Votes' are required."); return;
+      }
+
+      // Build a map: postTitle+candName → votes
+      const importMap = {}; // key: "postTitle|||candName"
+      for (let i = headerRowIdx + 1; i < rows.length; i++) {
+        const row = rows[i];
+        const candName = String(row[candCol] || '').trim();
+        const voteVal  = parseInt(row[votesCol]);
+        if (!candName || isNaN(voteVal)) continue;
+        const postTitle = postCol >= 0 ? String(row[postCol] || '').trim() : '';
+        const mapKey = postTitle ? `${postTitle}|||${candName}` : candName;
+        importMap[mapKey] = voteVal;
+      }
+
+      if (Object.keys(importMap).length === 0) {
+        alert("No valid vote data found in the file."); return;
+      }
+
+      // Match imported data to DB
+      let updated = 0, skipped = 0;
+      DB.posts.forEach(post => {
+        post.cands.forEach(cand => {
+          const cData = DB.candidates[`${post.id}_${cand}`];
+          const displayName = cData ? cData.name : cand;
+          // Try match with post title first, then just by candidate name
+          const keyWithPost  = `${post.title}|||${displayName}`;
+          const keyNameOnly  = displayName;
+          let votes = null;
+          if (importMap[keyWithPost] !== undefined)      votes = importMap[keyWithPost];
+          else if (importMap[keyNameOnly] !== undefined) votes = importMap[keyNameOnly];
+
+          if (votes !== null) {
+            DB.votes[`${post.id}_${cand}`] = votes;
+            updated++;
+          } else {
+            skipped++;
+          }
+        });
+      });
+
+      saveData();
+      alert(`✅ Import complete!\n• ${updated} candidate vote counts updated\n• ${skipped} candidates not matched (kept unchanged)`);
+      renderAdminPanel();
+    } catch(err) {
+      alert("Error reading .xlsx file. Make sure it is a valid Excel file.\n\nDetails: " + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = ''; // reset so same file can be re-imported
+}
+
+/* ============================================================
+   ADMIN — POSTS & CANDIDATES
+   ============================================================ */
+function addCandToNewPost() {
+  let inp = document.getElementById('newPostCandInput');
+  let name = inp.value.trim(); if (!name) return;
+  if (newPostCands.includes(name)) { alert("Already in list."); return; }
+  newPostCands.push(name); inp.value = '';
+  renderNewPostCandList();
+}
+function removeCandFromNewPost(name) { newPostCands = newPostCands.filter(c=>c!==name); renderNewPostCandList(); }
+function renderNewPostCandList() {
+  document.getElementById('newPostCandList').innerHTML = newPostCands.map(c=>
+    `<span class="cand-tag">${c}<button class="remove-cand" onclick="removeCandFromNewPost('${c}')">✕</button></span>`
+  ).join('') || '<span style="font-family:JetBrains Mono;font-size:12px;opacity:.5;">No candidates yet...</span>';
+}
+
+function createNewPost() {
+  let title = document.getElementById('newPostTitle').value.trim();
+  let id    = document.getElementById('newPostId').value.trim().replace(/\s+/g,'_').toLowerCase();
+  if (!title || !id) { alert("Enter a Post Title and Post ID."); return; }
+  if (newPostCands.length < 2) { alert("Add at least 2 candidates."); return; }
+  if (DB.posts.find(p=>p.id===id)) { alert("Post ID already exists."); return; }
+  let newPost = { id, title, cands: [...newPostCands], isHouse: false, house: '' };
+  DB.posts.push(newPost);
+  newPost.cands.forEach(cand => {
+    DB.candidates[`${id}_${cand}`] = { name: cand };
+    DB.votes[`${id}_${cand}`] = 0;
+  });
+  saveData();
+  newPostCands = [];
+  document.getElementById('newPostTitle').value = '';
+  document.getElementById('newPostId').value = '';
+  document.getElementById('newPostCandList').innerHTML = '';
+  alert(`Post "${title}" created!`);
+  renderAdminPanel();
+}
+
+function renderPostManageList() {
+  let html = '';
+  DB.posts.forEach(post => {
+    let candsHtml = post.cands.map(cand => {
+      let cData = DB.candidates[`${post.id}_${cand}`];
+      return `<span class="cand-tag">${cData ? cData.name : cand}
+        <button class="remove-cand" onclick="removeCandidateFromPost('${post.id}','${cand}')" title="Remove">✕</button>
+      </span>`;
+    }).join('');
+    html += `<div class="post-manage-row">
+      <div class="post-header">
+        <span class="post-title-label">📋 ${post.title} <span class="mono" style="font-size:11px;opacity:.5;">[${post.id}]</span></span>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deletePost('${post.id}')">Delete Post</button>
+      </div>
+      <div style="margin-bottom:6px;">${candsHtml}</div>
+      <div class="add-cand-row">
+        <input type="text" id="addCandInput_${post.id}" placeholder="Add new candidate..." onkeydown="if(event.key==='Enter') addCandidateToPost('${post.id}')">
+        <button class="btn btn-green" style="padding:6px 12px;font-size:12px;" onclick="addCandidateToPost('${post.id}')">+ Add</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('postManageList').innerHTML = html || '<p style="opacity:.5;font-family:JetBrains Mono;font-size:13px;">No posts found.</p>';
+}
+
+function addCandidateToPost(postId) {
+  let inp = document.getElementById(`addCandInput_${postId}`);
+  let name = inp.value.trim(); if (!name) return;
+  let post = DB.posts.find(p=>p.id===postId);
+  if (post.cands.includes(name)) { alert("Candidate already exists."); return; }
+  post.cands.push(name);
+  DB.candidates[`${postId}_${name}`] = { name };
+  DB.votes[`${postId}_${name}`] = 0;
+  saveData();
+  renderAdminPanel();
+}
+
+function removeCandidateFromPost(postId, candName) {
+  let post = DB.posts.find(p=>p.id===postId);
+  if (post.cands.length <= 2) { alert("Must have at least 2 candidates."); return; }
+  if (!confirm(`Remove "${candName}" from "${post.title}"?`)) return;
+  post.cands = post.cands.filter(c=>c!==candName);
+  delete DB.candidates[`${postId}_${candName}`];
+  delete DB.votes[`${postId}_${candName}`];
+  saveData();
+  renderAdminPanel();
+}
+
+function deletePost(postId) {
+  let post = DB.posts.find(p=>p.id===postId);
+  if (!confirm(`Delete post "${post.title}" and ALL its votes?`)) return;
+  post.cands.forEach(cand => { delete DB.candidates[`${postId}_${cand}`]; delete DB.votes[`${postId}_${cand}`]; });
+  DB.posts = DB.posts.filter(p=>p.id!==postId);
+  saveData();
+  renderAdminPanel();
+}
+
+/* ============================================================
+   ADMIN — TERMINALS
+   ============================================================ */
+function addTerminal() {
+  let id  = document.getElementById('newTerminalId').value.trim();
+  let max = parseInt(document.getElementById('newTerminalMax').value);
+  if (!id || isNaN(max)) { alert("Invalid terminal info."); return; }
+  DB.terminals[id] = { max, used: 0 };
+  saveData();
+  renderAdminPanel();
+}
+
+function deleteTerminal(id) {
+  delete DB.terminals[id];
+  saveData();
+  renderAdminPanel();
+}
+
+/* ============================================================
+   ADMIN — ADMISSIONS
+   ============================================================ */
+function addAdmission() {
+  let raw = document.getElementById('newAdmissionNo').value.trim();
+  if (!raw) return;
+  let nums = raw.split(',').map(s=>s.trim()).filter(Boolean);
+  let added = 0;
+  nums.forEach(adm => { if (!DB.admissions.includes(adm)) { DB.admissions.push(adm); added++; } });
+  if (added === 0) { alert("All numbers already exist."); return; }
+  saveData();
+  document.getElementById('newAdmissionNo').value = '';
+  renderAdminPanel();
+}
+
+function deleteAdmission(adm) {
+  DB.admissions = DB.admissions.filter(a=>a!==adm);
+  delete DB.admissionsUsed[adm];
+  saveData();
+  renderAdminPanel();
+}
+
+function importAdmissionsFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const nums = text.split(/[\n, ]+/).map(s=>s.trim()).filter(Boolean);
+    let added = 0;
+    nums.forEach(adm => { if (!DB.admissions.includes(adm)) { DB.admissions.push(adm); added++; } });
+    saveData();
+    alert(`Successfully imported ${added} new admission numbers.`);
+    renderAdminPanel();
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+/* ============================================================
+   ADMIN — EDIT CANDIDATES
+   ============================================================ */
+function updateCandSettingsDropdown() {
+  let postId = document.getElementById('editCandPostSelect').value;
+  let post   = DB.posts.find(p=>p.id===postId); if (!post) return;
+  document.getElementById('editCandNameSelect').innerHTML = post.cands.map(cand =>
+    `<option value="${cand}">${DB.candidates[`${postId}_${cand}`]?.name || cand}</option>`
+  ).join('');
+  loadCandidateDetails();
+}
+
+function loadCandidateDetails() {
+  let postId = document.getElementById('editCandPostSelect').value;
+  let cand   = document.getElementById('editCandNameSelect').value;
+  let cData  = DB.candidates[`${postId}_${cand}`]; if (!cData) return;
+  document.getElementById('editCandNewName').value = cData.name;
+}
+
+function saveCandidateSettings() {
+  let postId  = document.getElementById('editCandPostSelect').value;
+  let cand    = document.getElementById('editCandNameSelect').value;
+  let newName = document.getElementById('editCandNewName').value.trim();
+  if (!newName) return;
+  DB.candidates[`${postId}_${cand}`].name = newName;
+  saveData();
+  alert("Candidate name updated!"); renderAdminPanel();
+}
+
+/* ============================================================
+   ADMIN — EDIT VOTES
+   ============================================================ */
+function updateVoteDropdown() {
+  let postId = document.getElementById('editPostSelect').value;
+  let post   = DB.posts.find(p=>p.id===postId); if (!post) return;
+  document.getElementById('editCandSelect').innerHTML = post.cands.map(cand =>
+    `<option value="${cand}">${DB.candidates[`${postId}_${cand}`]?.name || cand}</option>`
+  ).join('');
+}
+
+function updateVotes() {
+  if (adminRole !== 'full') return;
+  let postId   = document.getElementById('editPostSelect').value;
+  let cand     = document.getElementById('editCandSelect').value;
+  let newVotes = parseInt(document.getElementById('editVoteCount').value);
+  if (isNaN(newVotes) || newVotes < 0) { alert("Enter a valid number."); return; }
+  DB.votes[`${postId}_${cand}`] = newVotes;
+  saveData();
+  document.getElementById('editVoteCount').value = '';
+  renderAdminPanel();
+}
+
+/* ============================================================
+   ADMIN — RESET EVM
+   ============================================================ */
+function resetEVM() {
+  if (!confirm("DANGER: Wipe all votes, reset terminals, clear admission history?")) return;
+  Object.keys(DB.votes).forEach(k => DB.votes[k] = 0);
+  Object.keys(DB.terminals).forEach(k => DB.terminals[k].used = 0);
+  DB.admissionsUsed = {};
+  saveData();
+  renderAdminPanel();
+}
+
+/* ============================================================
+   TAB SWITCHER
+   ============================================================ */
+function switchTab(tabId) {
+  document.querySelectorAll('.admin-tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tabId).classList.add('active');
+  const tabs = ['results','posts','terminals','admissions','votes'];
+  const idx  = tabs.indexOf(tabId);
+  if (idx >= 0) document.querySelectorAll('.admin-tab')[idx].classList.add('active');
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+window.addEventListener('load', () => {
+  loadData();
+  showScreen('googleAuthScreen');
+});
+</script>
+</body>
+</html>0
